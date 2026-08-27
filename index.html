@@ -516,3 +516,228 @@
     </script>
 </body>
 </html>
+        // ----- BLACKJACK -----
+        let deck = [];
+        let playerHand = [];
+        let dealerHand = [];
+        let gameOver = false;
+
+        function createDeck() {
+            const suits = ['♠','♥','♦','♣'];
+            const ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+            let d = [];
+            for (let s of suits) {
+                for (let r of ranks) {
+                    d.push({ rank: r, suit: s });
+                }
+            }
+            // shuffle
+            for (let i = d.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [d[i], d[j]] = [d[j], d[i]];
+            }
+            return d;
+        }
+
+        function cardValue(card) {
+            if (card.rank === 'A') return 11;
+            if (['J','Q','K'].includes(card.rank)) return 10;
+            return parseInt(card.rank);
+        }
+
+        function handTotal(hand) {
+            let total = hand.reduce((sum, c) => sum + cardValue(c), 0);
+            let aces = hand.filter(c => c.rank === 'A').length;
+            while (total > 21 && aces > 0) {
+                total -= 10;
+                aces--;
+            }
+            return total;
+        }
+
+        function renderBlackjack() {
+            deck = createDeck();
+            playerHand = [deck.pop(), deck.pop()];
+            dealerHand = [deck.pop(), deck.pop()];
+            gameOver = false;
+            return `
+                <div style="text-align:center;">
+                    <div style="background:#1a2a1a;padding:15px;border-radius:12px;border:2px solid #ffd70033;">
+                        <p style="color:#8899bb;">Dealer: <span id="dealerDisplay">${dealerHand[0].rank}${dealerHand[0].suit} ?</span></p>
+                        <p style="color:#fff;font-size:1.5rem;">Your hand: <span id="playerDisplay">${playerHand.map(c => c.rank+c.suit).join(' ')}</span></p>
+                        <p style="color:#ffd700;">Total: <span id="playerTotal">${handTotal(playerHand)}</span></p>
+                        <div style="margin-top:10px;display:flex;gap:10px;justify-content:center;">
+                            <button onclick="blackjackHit()" style="padding:8px 20px;border:none;border-radius:8px;background:#ffd700;color:#0a0e17;font-weight:bold;cursor:pointer;">Hit</button>
+                            <button onclick="blackjackStand()" style="padding:8px 20px;border:none;border-radius:8px;background:#ffd700;color:#0a0e17;font-weight:bold;cursor:pointer;">Stand</button>
+                        </div>
+                        <div id="bjResult" style="margin-top:10px;color:#ffd700;"></div>
+                    </div>
+                </div>
+            `;
+        }
+        window.blackjackHit = function() {
+            if (gameOver) return;
+            playerHand.push(deck.pop());
+            updateBlackjackUI();
+            if (handTotal(playerHand) > 21) {
+                gameOver = true;
+                document.getElementById('bjResult').textContent = '💥 Bust! You lose.';
+                modalResult.textContent = 'You lost your bet.';
+                // dealer wins, bet lost already
+            }
+        };
+
+        window.blackjackStand = function() {
+            if (gameOver) return;
+            gameOver = true;
+            // dealer draws until 17+
+            while (handTotal(dealerHand) < 17) {
+                dealerHand.push(deck.pop());
+            }
+            const playerTotal = handTotal(playerHand);
+            const dealerTotal = handTotal(dealerHand);
+            const bet = parseInt(betInput.value) || 10;
+            let win = 0;
+            if (dealerTotal > 21 || playerTotal > dealerTotal) {
+                win = bet * 2;
+                document.getElementById('bjResult').textContent = `🎉 You win! ${playerTotal} vs ${dealerTotal}`;
+            } else if (playerTotal === dealerTotal) {
+                win = bet; // push
+                document.getElementById('bjResult').textContent = `🤝 Push! ${playerTotal} vs ${dealerTotal}`;
+            } else {
+                document.getElementById('bjResult').textContent = `😞 You lose. ${playerTotal} vs ${dealerTotal}`;
+            }
+            // update balance
+            updateBalance(win - bet); // bet already deducted
+            modalBalance.textContent = currentUser.balance;
+            modalResult.textContent = win > bet ? `You won ${win - bet} coins!` : win === bet ? 'Push' : `You lost ${bet} coins.`;
+            // show dealer full hand
+            document.getElementById('dealerDisplay').textContent = dealerHand.map(c => c.rank+c.suit).join(' ');
+        };
+
+        function updateBlackjackUI() {
+            document.getElementById('playerDisplay').textContent = playerHand.map(c => c.rank+c.suit).join(' ');
+            document.getElementById('playerTotal').textContent = handTotal(playerHand);
+            document.getElementById('dealerDisplay').textContent = dealerHand[0].rank+dealerHand[0].suit + ' ?';
+        }
+        // ----- BACCARAT -----
+        function renderBaccarat() {
+            return `
+                <div style="text-align:center;">
+                    <div style="background:#1a2a1a;padding:15px;border-radius:12px;border:2px solid #ffd70033;">
+                        <p style="color:#ffd700;font-size:1.5rem;">Baccarat</p>
+                        <div style="display:flex;gap:20px;justify-content:center;margin:10px 0;">
+                            <button onclick="playBaccarat('player')" style="padding:8px 20px;border:none;border-radius:8px;background:#44ff44;color:#000;font-weight:bold;cursor:pointer;">Player (2x)</button>
+                            <button onclick="playBaccarat('banker')" style="padding:8px 20px;border:none;border-radius:8px;background:#ff4444;color:#fff;font-weight:bold;cursor:pointer;">Banker (1.95x)</button>
+                            <button onclick="playBaccarat('tie')" style="padding:8px 20px;border:none;border-radius:8px;background:#ffd700;color:#000;font-weight:bold;cursor:pointer;">Tie (8x)</button>
+                        </div>
+                        <div id="baccaratResult" style="margin-top:10px;color:#ffd700;"></div>
+                        <div id="baccaratCards" style="margin-top:10px;font-size:1.2rem;"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.playBaccarat = function(betOn) {
+            // Simple baccarat: draw 2 cards each, third card rules simplified
+            const suits = ['♠','♥','♦','♣'];
+            const ranks = ['A','2','3','4','5','6','7','8','9','10'];
+            function drawCard() {
+                return { rank: ranks[Math.floor(Math.random()*ranks.length)], suit: suits[Math.floor(Math.random()*suits.length)] };
+            }
+            function cardVal(c) {
+                if (c.rank === 'A') return 1;
+                if (['J','Q','K'].includes(c.rank)) return 0;
+                return parseInt(c.rank);
+            }
+            function handValue(cards) {
+                return cards.reduce((sum, c) => (sum + cardVal(c)) % 10, 0);
+            }
+            let playerCards = [drawCard(), drawCard()];
+            let bankerCards = [drawCard(), drawCard()];
+            let pVal = handValue(playerCards);
+            let bVal = handValue(bankerCards);
+            // Third card rules (simplified)
+            if (pVal <= 5) {
+                playerCards.push(drawCard());
+                pVal = handValue(playerCards);
+            }
+            if (bVal <= 5) {
+                bankerCards.push(drawCard());
+                bVal = handValue(bankerCards);
+            }
+            let result = '';
+            if (pVal > bVal) result = 'player';
+            else if (bVal > pVal) result = 'banker';
+            else result = 'tie';
+            
+            const bet = parseInt(betInput.value) || 10;
+            if (currentUser.balance < bet) { modalResult.textContent = '❌ Insufficient balance!'; return; }
+            updateBalance(-bet);
+            let win = 0;
+            if (result === betOn) {
+                if (betOn === 'player') win = bet * 2;
+                else if (betOn === 'banker') win = bet * 1.95;
+                else win = bet * 8;
+                updateBalance(win);
+                modalResult.textContent = `🎉 You won ${win} coins!`;
+            } else {
+                modalResult.textContent = `😞 You lost ${bet} coins. (${result})`;
+            }
+            document.getElementById('baccaratResult').textContent = `Result: ${result.toUpperCase()}  (Player: ${pVal}, Banker: ${bVal})`;
+            document.getElementById('baccaratCards').textContent = `Player: ${playerCards.map(c=>c.rank+c.suit).join(' ')}  |  Banker: ${bankerCards.map(c=>c.rank+c.suit).join(' ')}`;
+            modalBalance.textContent = currentUser.balance;
+        };
+        // ---------- ADD BLACKJACK & BACCARAT ----------
+        const NEW_GAMES = [
+            { id: 'blackjack', name: 'Blackjack', sub: 'Beat the dealer', icon: '♠️', type: 'blackjack' },
+            { id: 'baccarat', name: 'Baccarat', sub: 'Player vs Banker', icon: '🃏', type: 'baccarat' }
+        ];
+        GAMES.push(...NEW_GAMES);
+        
+        // Update renderGame to include new games
+        const oldRender = renderGame;
+        renderGame = function(type) {
+            switch(type) {
+                case 'blackjack': return renderBlackjack();
+                case 'baccarat': return renderBaccarat();
+                default: return oldRender(type);
+            }
+        };
+
+        // Re-render grid
+        const grid3 = document.getElementById('gameGrid');
+        grid3.innerHTML = GAMES.map(g => `
+            <div class="game-card" data-game="${g.id}" data-type="${g.type}">
+                <div class="icon">${g.icon}</div>
+                <div class="name">${g.name}</div>
+                <div class="sub">${g.sub}</div>
+                <span class="play-btn" style="display:inline-block;margin-top:0.8rem;padding:0.4rem 1.2rem;border:none;border-radius:20px;background:#ffd700;color:#0a0e17;font-weight:700;cursor:pointer;">▶ Play</span>
+            </div>
+        `).join('');
+    <style>
+        /* Casino felt background for game modals */
+        .modal-box .game-area {
+            background: radial-gradient(ellipse at center, #1a4a1a 0%, #0a2a0a 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #2a5a2a;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+        }
+        .modal-box .game-area p, .modal-box .game-area div {
+            color: #fff;
+        }
+    </style>
+    <style>
+        /* Casino felt background for game modals */
+        .modal-box .game-area {
+            background: radial-gradient(ellipse at center, #1a4a1a 0%, #0a2a0a 100%);
+            border-radius: 12px;
+            padding: 20px;
+            border: 2px solid #2a5a2a;
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+        }
+        .modal-box .game-area p, .modal-box .game-area div {
+            color: #fff;
+        }
+    </style>
