@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Profile – Jhonnywin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">🎰 Jhonnywin</div>
+    <nav><a href="/">Home</a><a href="/leaderboard.html">Leaderboard</a><a href="/profile.html" class="active">Profile</a></nav>
+  </header>
+  <div class="container" id="profileData">
+    <h2 style="color:#ffd700;">👤 My Profile</h2>
+    <div id="userInfo" style="background:#141f2f;padding:20px;border-radius:12px;"></div>
+    <h3 style="color:#ffd700;margin-top:20px;">🏆 My Scores</h3>
+    <div id="myScores" style="background:#141f2f;padding:20px;border-radius:12px;"></div>
+  </div>
+  <script>
+    fetch('/api/me')
+      .then(r => r.json())
+      .then(user => {
+        if (!user || !user.id) { window.location.href = '/login.html'; return; }
+        document.getElementById('userInfo').innerHTML = `
+          <p><strong>Username:</strong> ${user.username}</p>
+          <p><strong>Email:</strong> ${user.email}</p>
+          <p><strong>Avatar:</strong> ${user.avatar || '🎮'}</p>
+        `;
+        fetch(`/api/scores/${user.id}`)
+          .then(r => r.json())
+          .then(scores => {
+            if (scores.length === 0) {
+              document.getElementById('myScores').innerHTML = '<p>No scores yet. Play some games!</p>';
+              return;
+            }
+            document.getElementById('myScores').innerHTML = scores.map(s => 
+              `<p>${s.game}: <strong>${s.score}</strong></p>`
+            ).join('');
+          });
+      });
+  </script>
+</body>
+</html>

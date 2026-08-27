@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Register – Jhonnywin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="auth-box">
+    <h2 style="color:#ffd700;text-align:center;">📝 Register</h2>
+    <form onsubmit="register(event)">
+      <input type="text" id="username" placeholder="Username" required />
+      <input type="email" id="email" placeholder="Email" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <input type="password" id="confirm" placeholder="Confirm Password" required />
+      <button type="submit">Register</button>
+      <div id="error" class="error"></div>
+      <p style="text-align:center;margin-top:10px;">Already have an account? <a href="/login.html" style="color:#ffd700;">Login</a></p>
+    </form>
+  </div>
+  <script>
+    async function register(e) {
+      e.preventDefault();
+      const password = document.getElementById('password').value;
+      const confirm = document.getElementById('confirm').value;
+      if (password !== confirm) { document.getElementById('error').textContent = 'Passwords do not match'; return; }
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          username: document.getElementById('username').value,
+          email: document.getElementById('email').value,
+          password: password
+        })
+      });
+      const data = await res.json();
+      if (data.error) document.getElementById('error').textContent = data.error;
+      else window.location.href = '/';
+    }
+  </script>
+</body>
+</html>

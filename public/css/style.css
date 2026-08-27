@@ -1,0 +1,26 @@
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#0a0e17; color:#f1f1f1; font-family:'Segoe UI',Arial,sans-serif; }
+header { background:linear-gradient(90deg,#0f1a2b,#1a2a3f); padding:15px 30px; display:flex; justify-content:space-between; align-items:center; border-bottom:2px solid #ffd700; flex-wrap:wrap; }
+.logo { font-size:2rem; font-weight:900; background:linear-gradient(135deg,#ffd700,#f5a623); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+nav a { color:#ddd; text-decoration:none; padding:8px 14px; border-radius:6px; transition:0.2s; }
+nav a:hover { color:#ffd700; background:#1e2f42; }
+.btn { background:#ffd700; color:#000; padding:8px 16px; border-radius:6px; font-weight:bold; border:none; cursor:pointer; }
+.btn:hover { background:#f5a623; }
+.container { max-width:1200px; margin:auto; padding:40px 20px; }
+.game-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); gap:20px; }
+.game-card { background:#141f2f; border-radius:16px; padding:20px; text-align:center; border:1px solid #1e2f42; transition:0.3s; cursor:pointer; text-decoration:none; color:inherit; }
+.game-card:hover { transform:translateY(-6px); border-color:#ffd700; box-shadow:0 8px 30px rgba(255,215,0,0.15); }
+.game-card .icon { font-size:3rem; }
+.game-card .name { font-weight:700; margin:10px 0 5px; }
+.game-card .sub { color:#5a7a9a; font-size:0.85rem; }
+.auth-box { max-width:400px; margin:100px auto; background:#141f2f; padding:30px; border-radius:16px; border:1px solid #ffd70033; }
+.auth-box input { width:100%; padding:10px; margin:8px 0; border:none; border-radius:8px; background:#1e2f42; color:#fff; }
+.auth-box button { width:100%; padding:10px; background:#ffd700; border:none; border-radius:8px; font-weight:bold; cursor:pointer; }
+.auth-box .error { color:#ff4444; margin-top:10px; }
+.modal { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.85); z-index:999; justify-content:center; align-items:center; }
+.modal.open { display:flex; }
+.modal-box { background:#141f2f; border-radius:16px; max-width:700px; width:100%; padding:30px; border:1px solid #ffd70044; max-height:90vh; overflow:auto; }
+.modal-close { float:right; background:none; border:none; color:#8899bb; font-size:2rem; cursor:pointer; }
+.casino-felt { background:radial-gradient(ellipse at center,#1a4a1a,#0a2a0a); border-radius:12px; padding:20px; border:2px solid #2a5a2a; }
+.card { display:inline-block; background:#fff; color:#000; padding:8px 12px; border-radius:6px; margin:4px; font-weight:bold; }
+@media(max-width:600px){ header{flex-direction:column;} nav{margin-top:10px;} }

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Leaderboard – Jhonnywin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">🎰 Jhonnywin</div>
+    <nav><a href="/">Home</a><a href="/leaderboard.html" class="active">Leaderboard</a><a href="/profile.html">Profile</a></nav>
+  </header>
+  <div class="container">
+    <h2 style="color:#ffd700;text-align:center;">🏆 Leaderboard</h2>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin:20px 0;">
+      <button onclick="loadBoard('blackjack')" class="btn">Blackjack</button>
+      <button onclick="loadBoard('baccarat')" class="btn">Baccarat</button>
+      <button onclick="loadBoard('roulette')" class="btn">Roulette</button>
+      <button onclick="loadBoard('slots')" class="btn">Slots</button>
+      <button onclick="loadBoard('snake')" class="btn">Snake</button>
+      <button onclick="loadBoard('flappy')" class="btn">Flappy Bird</button>
+    </div>
+    <div id="board" style="background:#141f2f;padding:20px;border-radius:12px;"></div>
+  </div>
+  <script>
+    function loadBoard(game) {
+      fetch(`/api/leaderboard/${game}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.length === 0) {
+            document.getElementById('board').innerHTML = '<p>No scores yet.</p>';
+            return;
+          }
+          document.getElementById('board').innerHTML = data.map((s, i) => 
+            `<p>#${i+1} ${s.username}: <strong>${s.score}</strong> (${s.date})</p>`
+          ).join('');
+        });
+    }
+    loadBoard('blackjack');
+  </script>
+</body>
+</html>

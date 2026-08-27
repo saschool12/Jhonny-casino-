@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Game – Jhonnywin</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">🎰 Jhonnywin</div>
+    <nav><a href="/">Home</a><a href="/leaderboard.html">Leaderboard</a><a href="/profile.html">Profile</a></nav>
+  </header>
+  <div class="container">
+    <h2 id="gameTitle" style="color:#ffd700;text-align:center;">🎮 Game</h2>
+    <div style="max-width:700px;margin:0 auto;background:#141f2f;border-radius:16px;padding:30px;border:1px solid #ffd70033;">
+      <div style="text-align:center;margin-bottom:15px;">💰 Balance: <span id="balance" style="color:#ffd700;">100</span> coins</div>
+      <div id="gameArea" class="casino-felt"></div>
+      <div id="result" style="margin-top:15px;text-align:center;color:#ffd700;font-size:1.2rem;"></div>
+      <button onclick="saveScore()" style="margin-top:10px;padding:8px 20px;background:#ffd700;border:none;border-radius:8px;font-weight:bold;cursor:pointer;">💾 Save Score</button>
+    </div>
+  </div>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const gameType = params.get('game') || 'blackjack';
+    let balance = 100;
+    let currentScore = 0;
+    document.getElementById('gameTitle').textContent = `🎮 ${gameType.charAt(0).toUpperCase() + gameType.slice(1)}`;
+
+    // ----- GAME IMPLEMENTATIONS -----
+    function renderGame(type) {
+      switch(type) {
+        case 'blackjack': return renderBlackjack();
+        case 'baccarat': return renderBaccarat();
+        case 'roulette': return renderRoulette();
+        case 'slots': return renderSlots();
+        case 'snake': return renderSnake();
+        case 'flappy': return renderFlappy();
+        default: return '<p>Game not found</p>';
+      }
+    }
+
+    // ---------- BLACKJACK ----------
+    let deck = [], playerHand = [], dealerHand = [], gameOver = false;
+    function createDeck() {
+      const suits = ['♠','♥','♦','♣'], ranks = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+      let d = [];
+      for (let s of suits) for (let r of ranks) d.push({rank:r, suit:s});
+      for (let i = d.length-1; i>0; i--) { let j = Math.floor(Math.random()*(i+1)); [d[i],d[j]] = [d[j],d[i]]; }
+      return d;
+    }
+    function cardVal(c) { if (c.rank==='A') return 11; if (['J','Q','K'].includes(c.rank)) return 10; return parseInt(c.rank); }
+    function handTotal(h) { let t = h.reduce((s,c) => s+cardVal(c),0); let a = h.filter(c => c.rank==='A').length; while(t>21 && a>0) { t-=10; a--; } return t; }
+    function renderBlackjack() {
+      deck = createDeck(); playerHand = [deck.pop(), deck.pop()]; dealerHand = [deck.pop(), deck.pop()]; gameOver = false;
+      return `<div style="text-align:center;">
+        <p>Dealer: <span id="dealerDisplay">${dealerHand[0].rank}${dealerHand[0].suit} ?</span></p>
+        <p style="font-size:1.5rem;">Your hand: <span id="playerDisplay">${playerHand.map(c=>c.rank+c.suit).join(' ')}</span></p>
+        <p>Total: <span id="playerTotal">${handTotal(playerHand)}</span></p>
+        <div style="margin:10px 0;"><button onclick="bjHit()" class="btn">Hit</button> <button onclick="bjStand()" class="btn">Stand</button></div>
+        <div id="bjResult"></div>
+      </div>`;
+    }
+    function updateBJ() {
+      document.getElementById('playerDisplay').textContent = playerHand.map(c=>c.rank+c.suit).join(' ');
+      document.getElementById('playerTotal').textContent = handTotal(playerHand);
+      document.getElementById('dealerDisplay').textContent = dealerHand[0].rank+dealerHand[0].suit + ' ?';
+    }
+    window.bjHit = function() {
+      if (gameOver) return; playerHand.push(deck.pop()); updateBJ();
+      if (handTotal(playerHand) > 21) { gameOver = true; document.getElementById('bjResult').textContent = '💥 Bust! You lose.'; document.getElementById('result').textContent = 'Lost bet!'; }
+    };
+    window.bjStand = function() {
+      if (gameOver) return; gameOver = true;
+      while (handTotal(dealerHand) < 17) dealerHand.push(deck.pop());
+      const p = handTotal(playerHand), d = handTotal(dealerHand);
+      document.getElementById('dealerDisplay').textContent = dealerHand.map(c=>c.rank+c.suit).join(' ');
+      let win = 0;
+      if (d > 21 || p > d) { win = 20; document.getElementById('bjResult').textContent = `🎉 You win! ${p} vs ${d}`; }
+      else if (p === d) { win = 10; document.getElementById('bjResult').textContent = `🤝 Push! ${p} vs ${d}`; }
+      else { document.getElementById('bjResult').textContent = `😞 You lose. ${p} vs ${d}`; }
+      balance = balance - 10 + win; document.getElementById('balance').textContent = balance;
+      currentScore = p;
+    };
+
+    // ---------- BACCARAT ----------
+    function renderBaccarat() {
+      return `<div style="text-align:center;">
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button onclick="playBaccarat('player')" class="btn">Player (2x)</button>
+          <button onclick="playBaccarat('banker')" class="btn">Banker (1.95x)</button>
+          <button onclick="playBaccarat('tie')" class="btn">Tie (8x)</button>
+        </div>
+        <div id="bacResult" style="margin-top:10px;"></div>
+      </div>`;
+    }
+    window.playBaccarat = function(betOn) {
+      const suits = ['♠','♥','♦','♣'], ranks = ['A','2','3','4','5','6','7','8','9','10'];
+      function draw() { return {rank: ranks[Math.floor(Math.random()*ranks.length)], suit: suits[Math.floor(Math.random()*suits.length)]}; }
+      function val(c) { if (c.rank==='A') return 1; if (['J','Q','K'].includes(c.rank)) return 0; return parseInt(c.rank); }
+      function hv(cards) { return cards.reduce((s,c) => (s+val(c))%10, 0); }
+      let p = [draw(), draw()], b = [draw(), draw()];
+      let pv = hv(p), bv = hv(b);
+      if (pv <= 5) { p.push(draw()); pv = hv(p); }
+      if (bv <= 5) { b.push(draw()); bv = hv(b); }
+      let result = pv > bv ? 'player' : bv > pv ? 'banker' : 'tie';
+      let win = 0;
+      if (result === betOn) {
+        if (betOn === 'player') win = 20; else if (betOn === 'banker') win = 19.5; else win = 80;
+        balance = balance - 10 + win;
+        document.getElementById('balance').textContent = Math.floor(balance);
+        document.getElementById('result').textContent = `🎉 You won ${Math.floor(win)} coins!`;
+      } else {
+        document.getElementById('result').textContent = `😞 You lost. Result: ${result.toUpperCase()}`;
+      }
+      document.getElementById('bacResult').textContent = `Player: ${pv} | Banker: ${bv} (${result.toUpperCase()})`;
+      currentScore = Math.floor(balance);
+    };
+
+    // ---------- ROULETTE ----------
+    function renderRoulette() {
+      return `<div style="text-align:center;">
+        <div style="font-size:3rem;margin:10px 0;" id="rouletteResult">🎡</div>
+        <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+          <button onclick="spinRoulette('red')" style="background:#ff4444;color:#fff;padding:8px 20px;border:none;border-radius:8px;cursor:pointer;">🔴 Red</button>
+          <button onclick="spinRoulette('black')" style="background:#222;color:#fff;padding:8px 20px;border:none;border-radius:8px;cursor:pointer;">⚫ Black</button>
+          <button onclick="spinRoulette('green')" style="background:#44ff44;color:#000;padding:8px 20px;border:none;border-radius:8px;cursor:pointer;">🟢 Green</button>
+        </div>
+        <p style="color:#8899bb;margin-top:10px;">Red 2x | Black 2x | Green 14x</p>
+      </div>`;
+    }
+    window.spinRoulette = function(color) {
+      const colors = ['red','black','red','black','red','black','red','black','red','black','red','black','red','black','green'];
+      const result = colors[Math.floor(Math.random()*colors.length)];
+      document.getElementById('rouletteResult').textContent = result.toUpperCase() + ' ' + (result === 'red' ? '🔴' : result === 'black' ? '⚫' : '🟢');
+      let win = 0;
+      if (result === color) {
+        win = color === 'green' ? 140 : 20;
+        balance = balance - 10 + win;
+        document.getElementById('balance').textContent = Math.floor(balance);
+        document.getElementById('result').textContent = `🎉 You won ${win} coins!`;
+      } else {
+        document.getElementById('result').textContent = `😞 Lost. Result: ${result}`;
+      }
+      currentScore = Math.floor(balance);
+    };
+
+    // ---------- SLOTS ----------
+    const symbols = ['🍒','🍋','🍉','⭐','💎','7️⃣'];
+    function renderSlots() {
+      return `<div style="text-align:center;font-size:3rem;">
+        <span id="s1">🍒</span><span id="s2">🍋</span><span id="s3">🍉</span>
+        <button onclick="spinSlots()" class="btn" style="display:block;margin:10px auto;">🎰 Spin (10 coins)</button>
+      </div>`;
+    }
+    window.spinSlots = function() {
+      const r = () => symbols[Math.floor(Math.random()*symbols.length)];
+      let a = r(), b = r(), c = r();
+      document.getElementById('s1').textContent = a; document.getElementById('s2').textContent = b; document.getElementById('s3').textContent = c;
+      let win = 0;
+      if (a===b && b===c) win = 100;
+      else if (a===b || b===c || a===c) win = 20;
+      balance = balance - 10 + win;
+      document.getElementById('balance').textContent = Math.floor(balance);
+      document.getElementById('result').textContent = win > 0 ? `🎉 You won ${win}!` : `😞 You lost 10 coins.`;
+      currentScore = Math.floor(balance);
+    };
+
+    // ---------- SNAKE ----------
+    let snakeGame = null;
+    function renderSnake() {
+      return `<div style="text-align:center;">
+        <canvas id="snakeCanvas" width="400" height="400" style="background:#0a0a0a;border-radius:12px;border:2px solid #ffd70033;"></canvas>
+        <div style="margin-top:10px;">Score: <span id="snakeScore">0</span></div>
+        <button onclick="startSnake()" class="btn">Start</button>
+      </div>`;
+    }
+    window.startSnake = function() {
+      const canvas = document.getElementById('snakeCanvas');
+      const ctx = canvas.getContext('2d');
+      const gridSize = 20;
+      let snake = [{x:10,y:10}], dir = {x:1,y:0}, food = {x:15,y:10}, score = 0, gameRunning = true;
+      document.getElementById('snakeScore').textContent = score;
+      function draw() {
+        ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0,0,400,400);
+        ctx.fillStyle = '#ff4444'; ctx.fillRect(food.x*gridSize, food.y*gridSize, gridSize-2, gridSize-2);
+        ctx.fillStyle = '#44ff44';
+        for (let s of snake) ctx.fillRect(s.x*gridSize, s.y*gridSize, gridSize-2, gridSize-2);
+      }
+      function move() {
+        if (!gameRunning) return;
+        let head = {x: snake[0].x + dir.x, y: snake[0].y + dir.y};
+        if (head.x < 0 || head.x >= 20 || head.y < 0 || head.y >= 20) { gameRunning = false; document.getElementById('result').textContent = '💀 Game Over!'; return; }
+        if (snake.some(s => s.x === head.x && s.y === head.y)) { gameRunning = false; document.getElementById('result').textContent = '💀 Game Over!'; return; }
+        snake.unshift(head);
+        if (head.x === food.x && head.y === food.y) {
+          score += 10; document.getElementById('snakeScore').textContent = score; currentScore = score;
+          food = {x: Math.floor(Math.random()*20), y: Math.floor(Math.random()*20)};
+        } else { snake.pop(); }
+        draw();
+        setTimeout(move, 150);
+      }
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'ArrowUp' && dir.y !== 1) dir = {x:0,y:-1};
+        if (e.key === 'ArrowDown' && dir.y !== -1) dir = {x:0,y:1};
+        if (e.key === 'ArrowLeft' && dir.x !== 1) dir = {x:-1,y:0};
+        if (e.key === 'ArrowRight' && dir.x !== -1) dir = {x:1,y:0};
+      });
+      move();
+    };
+
+    // ---------- FLAPPY ----------
+    let flappyGame = null;
+    function renderFlappy() {
+      return `<div style="text-align:center;">
+        <canvas id="flappyCanvas" width="400" height="500" style="background:#0a0a0a;border-radius:12px;border:2px solid #ffd70033;"></canvas>
+        <div style="margin-top:10px;">Score: <span id="flappyScore">0</span></div>
+        <button onclick="startFlappy()" class="btn">Start</button>
+      </div>`;
+    }
+    window.startFlappy = function() {
+      const canvas = document.getElementById('flappyCanvas');
+      const ctx = canvas.getContext('2d');
+      let bird = {x:50, y:250, vy:0}, pipes = [], score = 0, gameRunning = true;
+      const gravity = 0.5, jump = -8, pipeWidth = 40, gap = 120;
+      document.getElementById('flappyScore').textContent = score;
+      function draw() {
+        ctx.fillStyle = '#0a0a0a'; ctx.fillRect(0,0,400,500);
+        ctx.fillStyle = '#ffd700'; ctx.fillRect(bird.x, bird.y, 20, 20);
+        ctx.fillStyle = '#44ff44';
+        for (let p of pipes) {
+          ctx.fillRect(p.x, 0, pipeWidth, p.top);
+          ctx.fillRect(p.x, p.top + gap, pipeWidth, 500 - p.top - gap);
+        }
+      }
+      function update() {
+        if (!gameRunning) return;
+        bird.vy += gravity; bird.y += bird.vy;
+        if (bird.y > 500 || bird.y < 0) { gameRunning = false; document.getElementById('result').textContent = '💀 Game Over!'; return; }
+        if (pipes.length === 0 || pipes[pipes.length-1].x < 300) {
+          pipes.push({x: 400, top: Math.random()*(350-150)+150});
+        }
+        for (let p of pipes) {
+          p.x -= 2;
+          if (p.x < -pipeWidth) pipes.shift();
+          if (bird.x < p.x + pipeWidth && bird.x + 20 > p.x &&
+              (bird.y < p.top || bird.y + 20 > p.top + gap)) {
+            gameRunning = false; document.getElementById('result').textContent = '💀 Game Over!';
+          }
+          if (p.x + pipeWidth < bird.x && !p.passed) { p.passed = true; score += 10; document.getElementById('flappyScore').textContent = score; currentScore = score; }
+        }
+        draw();
+        requestAnimationFrame(update);
+      }
+      document.addEventListener('keydown', () => { bird.vy = jump; });
+      canvas.addEventListener('click', () => { bird.vy = jump; });
+      update();
+    };
+
+    // ---------- SAVE SCORE ----------
+    window.saveScore = function() {
+      if (currentScore < 0) return;
+      fetch('/api/score', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ game: gameType, score: currentScore })
+      }).then(() => document.getElementById('result').textContent = '✅ Score saved!');
+    };
+
+    // ---------- INIT ----------
+    document.getElementById('gameArea').innerHTML = renderGame(gameType);
+  </script>
+</body>
+</html>

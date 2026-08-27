@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🎰 Jhonnywin Casino</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">🎰 Jhonnywin</div>
+    <nav id="navLinks">
+      <a href="/">Home</a>
+      <a href="/leaderboard.html">Leaderboard</a>
+      <a href="/profile.html">Profile</a>
+      <span id="authBtn"><a href="/login.html" class="btn">Login</a></span>
+    </nav>
+  </header>
+
+  <div class="container">
+    <h1 style="color:#ffd700;text-align:center;margin-bottom:30px;">🎮 Casino Games</h1>
+    <div class="game-grid" id="gameGrid">
+      <a href="/game.html?game=blackjack" class="game-card"><div class="icon">♠️</div><div class="name">Blackjack</div><div class="sub">Beat the dealer</div></a>
+      <a href="/game.html?game=baccarat" class="game-card"><div class="icon">🃏</div><div class="name">Baccarat</div><div class="sub">Player vs Banker</div></a>
+      <a href="/game.html?game=roulette" class="game-card"><div class="icon">🎡</div><div class="name">Roulette</div><div class="sub">Spin the wheel</div></a>
+      <a href="/game.html?game=slots" class="game-card"><div class="icon">🎰</div><div class="name">Slots</div><div class="sub">Lucky spin</div></a>
+      <a href="/game.html?game=snake" class="game-card"><div class="icon">🐍</div><div class="name">Snake</div><div class="sub">Classic arcade</div></a>
+      <a href="/game.html?game=flappy" class="game-card"><div class="icon">🐦</div><div class="name">Flappy Bird</div><div class="sub">Tap to fly</div></a>
+    </div>
+  </div>
+
+  <script>
+    // Check login status
+    fetch('/api/me')
+      .then(r => r.json())
+      .then(user => {
+        if (user && user.id) {
+          document.getElementById('authBtn').innerHTML = `<span style="color:#ffd700;">👤 ${user.username}</span> <a href="#" onclick="logout()" class="btn" style="background:#ff4444;color:#fff;">Logout</a>`;
+        }
+      });
+    function logout() {
+      fetch('/api/logout', {method:'POST'}).then(() => location.reload());
+    }
+  </script>
+</body>
+</html>
